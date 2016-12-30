@@ -132,6 +132,7 @@ FFMPEG.prototype.handleSnapshotRequest = function(request, callback) {
   });
   ffmpeg.on('close', function(code) {
     callback(undefined, imageBuffer);
+    console.log("Snapshot Request");
   });
 }
 
@@ -244,6 +245,7 @@ FFMPEG.prototype.handleStreamRequest = function(request) {
       var ffmpegProcess = this.ongoingSessions[sessionIdentifier];
       if (ffmpegProcess) {
         ffmpegProcess.kill('SIGKILL');
+        console.log("Session Killed");
       }
 
       delete this.ongoingSessions[sessionIdentifier];
