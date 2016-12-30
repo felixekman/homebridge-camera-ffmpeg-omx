@@ -86,7 +86,7 @@ sudo nano /var/homebridge/config.json
                 "name": "CameraBridge",
                 "username": "CC:55:77:88:55:02",
                 "port": 51826,
-                "pin": "030-40-007"
+                "pin": "333-22-111"
         },
         "platforms": [{
                 "platform": "Camera-ffmpeg",
