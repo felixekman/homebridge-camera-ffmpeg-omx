@@ -1,0 +1,115 @@
+
+ssh pi@raspberrypi.local
+
+sudo apt-get update
+sudo apt-get upgrade
+
+sudo apt-get install -y git make
+
+curl -sL https://deb.nodesource.com/setup_6.x | sudo -E bash -
+
+sudo apt-get install -y nodejs
+
+sudo apt-get install -y libavahi-compat-libdnssd-dev
+
+--------------------------------------------- FFMPEG HW Encode RPI 3---------------------------------------------
+
+sudo apt-get install autoconf automake build-essential libass-dev libfreetype6-dev \
+libsdl1.2-dev libtheora-dev libtool libva-dev libvdpau-dev libvorbis-dev libxcb1-dev libxcb-shm0-dev \
+libxcb-xfixes0-dev pkg-config texinfo zlib1g-dev
+
+cd ~
+sudo git clone https://github.com/ffmpeg/FFMpeg --depth 1
+cd ~/FFMpeg
+sudo ./configure --enable-gpl --enable-nonfree --enable-mmal --enable-omx --enable-omx-rpi
+sudo make -j4 
+sudo ./ffmpeg -encoders | grep h264_omx
+sudo make install
+
+---------------------------------------------
+
+sudo npm install -g --unsafe-perm homebridge hap-nodejs node-gyp
+cd /usr/lib/node_modules/homebridge/
+sudo npm install -g --unsafe-perm git+https://github.com/felixekman/homebridge-camera-ffmpeg-omx
+sudo npm install --unsafe-perm bignum
+cd /usr/lib/node_modules/hap-nodejs/node_modules/mdns
+sudo node-gyp BUILDTYPE=Release rebuild
+
+sudo useradd --system homebridge
+sudo usermod -a -G root homebridge
+sudo usermod -a -G sudo homebridge
+sudo usermod -a -G gpio homebridge
+sudo mkdir /var/homebridge
+sudo chmod -R 777 /var/homebridge
+
+sudo nano /etc/default/homebridge
+
+---------------------------------------------
+
+# Defaults / Configuration options for homebridge
+# The following settings tells homebridge where to find the config.json file and where to persist the data (i.e. pairing and others)
+HOMEBRIDGE_OPTS=-U /var/homebridge
+
+# If you uncomment the following line, homebridge will log more 
+# You can display this via systemd's journalctl: journalctl -f -u homebridge
+# DEBUG=*
+
+---------------------------------------------
+
+sudo nano /etc/systemd/system/homebridge.service
+
+---------------------------------------------
+
+[Unit]
+Description=Node.js HomeKit Server 
+After=syslog.target network-online.target
+
+[Service]
+Type=simple
+User=homebridge
+EnvironmentFile=/etc/default/homebridge
+ExecStart=/usr/bin/homebridge $HOMEBRIDGE_OPTS
+Restart=on-failure
+RestartSec=10
+KillMode=process
+
+[Install]
+WantedBy=multi-user.target
+
+---------------------------------------------
+
+sudo nano /var/homebridge/config.json
+
+---------------------------------------------
+{
+        "bridge": {
+                "name": "CameraBridge",
+                "username": "CC:55:77:88:55:02",
+                "port": 51826,
+                "pin": "030-40-007"
+        },
+        "platforms": [{
+                "platform": "Camera-ffmpeg",
+                "name": "YYYYYYY",
+                "cameras": [{
+                        "name": "YYYYYYY",
+                        "videoConfig": {
+                                "source": "-re -i rtsp://XXX.XXX.XXX.XXX:554/ch0_0.h264",
+                                "maxStreams": 2,
+                                "maxWidth": 1280,
+                                "maxHeight": 720,
+                                "maxFPS": 30
+                        }
+                }]
+        }]
+}
+
+
+------------------------------------
+
+sudo chmod -R 777 /var/homebridge
+
+sudo systemctl daemon-reload
+sudo systemctl enable homebridge
+sudo systemctl start homebridge
+sudo systemctl status homebridge
